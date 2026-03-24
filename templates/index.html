@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Taller | Riesgo Crediticio</title>
+  
+
+  
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <h1>Evaluación de Riesgo Crediticio</h1>
+      <p class="subtitle">Minería de datos + Machine Learning + Web + API (dataset real)</p>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if not model_exists %}
+      <div class="alert">
+        <strong>⚠️ Modelo no encontrado.</strong> Ejecuta primero <code>py train.py</code> para generar <code>modelo.pkl</code> y <code>metrics.json</code>.
+      </div>
+    {% endif %}
+
+    <section class="grid">
+      <!-- DASHBOARD -->
+      <div class="card">
+        <h2>Dashboard</h2>
+
+        {% if metrics %}
+          <!-- KPIs (resumen ejecutivo) -->
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-label">Registros</div>
+              <div class="kpi-value">{{ metrics.dataset.total }}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Good</div>
+              <div class="kpi-value">{{ metrics.dataset.good }}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Bad</div>
+              <div class="kpi-value">{{ metrics.dataset.bad }}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">% Bad</div>
+              <div class="kpi-value">{{ (metrics.dataset.bad_rate * 100) | round(2) }}%</div>
+            </div>
+          </div>
+
+          <!-- Distribución Good vs Bad (GRÁFICO) -->
+          <div class="card-inner">
+            <h3>Distribución Good vs Bad</h3>
+
+            <!-- Canvas para gráfico donut (lo dibujamos en JS) -->
+            <div style="margin-top:10px;">
+              <canvas id="goodBadChart" height="160"></canvas>
+            </div>
+
+            <!-- Fallback (por si no carga JS) -->
+            <noscript>
+              <p class="hint">Activa JavaScript para ver el gráfico.</p>
+            </noscript>
+
+            <!-- Barra vieja como respaldo visual simple -->
+            {% set total = metrics.dataset.total %}
+            {% set good_pct = (metrics.dataset.good / total * 100) if total else 0 %}
+            {% set bad_pct = (metrics.dataset.bad / total * 100) if total else 0 %}
+            <div class="bar">
+              <div class="bar-seg good" id="goodBarFallback">Good</div>
+              <div class="bar-seg bad" id="badBarFallback">Bad</div>
+            </div>
+
+            </div>
+
+          <!-- Métricas del modelo (GRÁFICO) -->
+          <div class="card-inner">
+            <h3>Métricas del modelo (test)</h3>
+
+            
+            <div class="metrics-grid">
+              <div><span>Accuracy:</span> <strong>{{ metrics.metrics.accuracy }}</strong></div>
+              <div><span>Precision:</span> <strong>{{ metrics.metrics.precision }}</strong></div>
+              <div><span>Recall:</span> <strong>{{ metrics.metrics.recall }}</strong></div>
+              <div><span>F1:</span> <strong>{{ metrics.metrics.f1 }}</strong></div>
+            </div>
+
+            <!-- Canvas para barras (lo dibujamos en JS) -->
+            <div style="margin-top:12px;">
+              <canvas id="modelMetricsChart" height="160"></canvas>
+            </div>
+          </div>
+
+          <!-- Matriz de confusión (HEATMAP + TABLA) -->
+          <div class="card-inner">
+            <h3>Matriz de confusión</h3>
+
+            <!-- Heatmap simple (lo llenamos en JS) -->
+            <div id="confusionMatrixHeatmap" style="margin-top:10px;"></div>
+
+            <!-- Tabla (respaldo exacta) -->
+            <table class="table" style="margin-top:12px;">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Pred: Good (0)</th>
+                  <th>Pred: Bad (1)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Real: Good (0)</th>
+                  <td>{{ metrics.metrics.confusion_matrix[0][0] }}</td>
+                  <td>{{ metrics.metrics.confusion_matrix[0][1] }}</td>
+                </tr>
+                <tr>
+                  <th>Real: Bad (1)</th>
+                  <td>{{ metrics.metrics.confusion_matrix[1][0] }}</td>
+                  <td>{{ metrics.metrics.confusion_matrix[1][1] }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p class="hint">Tip: En riesgo crediticio suele importarnos mucho detectar los “bad” (recall).</p>
+          </div>
+
+        {% else %}
+          <p class="hint">Entrena el modelo para ver métricas y gráficos del dashboard.</p>
+        {% endif %}
+      </div>
+
+      <!-- SIMULADOR -->
+      <div class="card">
+        <h2>Simulador de préstamo</h2>
+        <p class="hint">Llena el formulario y presiona <strong>Evaluar</strong>. La web envía los datos a la API y el modelo responde el riesgo.</p>
+
+        <form id="formulario" class="form">
+          <div class="row">
+            <label>Edad</label>
+            <input type="number" name="age" min="18" max="100" value="35" required />
+          </div>
+
+          <div class="row">
+            <label>Monto del crédito</label>
+            <input type="number" name="credit_amount" min="0" step="1" value="2000" required />
+          </div>
+
+          <div class="row">
+            <label>Duración (meses)</label>
+            <input type="number" name="month_duration" min="1" max="120" value="24" required />
+          </div>
+
+          <div class="row">
+            <label>Cuota / ingreso (1-4)</label>
+            <input type="number" name="payment_to_income_ratio" min="1" max="4" step="1" value="2" required />
+          </div>
+
+          <div class="row">
+            <label>Años en empleo</label>
+            <select name="years_employment" required>
+              {% for opt in options.get("years_employment", []) %}
+                <option value="{{ opt }}">{{ labels.get("years_employment", {}).get(opt, opt) }}</option>
+              {% endfor %}
+          </select>
+          </div>
+
+          <div class="row">
+            <label>Estado cuenta (checking)</label>
+            <select name="status_account" required>
+              {% for opt in options.get("status_account", []) %}
+                <option value="{{ opt }}">{{ labels.get("status_account", {}).get(opt, opt) }}</option>
+              {% endfor %}
+          </select>
+          </div>
+
+          <div class="row">
+            <label>Historial crediticio</label>
+            <select name="credit_history" required>
+              {% for opt in options.get("credit_history", []) %}
+                <option value="{{ opt }}">{{ labels.get("credit_history", {}).get(opt, opt) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <label>Ahorros (savings)</label>
+            <select name="status_savings" required>
+              {% for opt in options.get("status_savings", []) %}
+                <option value="{{ opt }}">{{ labels.get("status_savings", {}).get(opt, opt) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="submit" class="btn">Evaluar</button>
+        </form>
+
+        <div id="resultado" class="result hidden"></div>
+        <div id="error" class="error hidden"></div>
+      </div>
+    </section>
+
+    </main>
+
+  <footer class="footer-bleed">
+    <div class="container footer-content">
+      <p><strong>Proyecto académico:</strong> Colegio Universitario de Cartago (CUC) — Curso: Almacenes de Datos.</p>
+      <p><strong>Integrantes:</strong> Andrey Calderón Vega · Roberto Goméz Gonzáles · María José Ramírez Hernández · Isaac Rodríguez Zuñiga</p>
+    </div>
+  </footer>
+  
+
+  <!-- Datos para el JS (SIN tojson, armado a mano para evitar fallos) -->
+  <script id="dashboard-data" type="application/json">
+    {% if metrics %}
+    {
+      "dataset": {
+        "total": {{ metrics.dataset.total }},
+        "good": {{ metrics.dataset.good }},
+        "bad": {{ metrics.dataset.bad }},
+        "bad_rate": {{ metrics.dataset.bad_rate }}
+      },
+      "model": {
+        "accuracy": {{ metrics.metrics.accuracy }},
+        "precision": {{ metrics.metrics.precision }},
+        "recall": {{ metrics.metrics.recall }},
+        "f1": {{ metrics.metrics.f1 }},
+        "confusion_matrix": [
+          [{{ metrics.metrics.confusion_matrix[0][0] }}, {{ metrics.metrics.confusion_matrix[0][1] }}],
+          [{{ metrics.metrics.confusion_matrix[1][0] }}, {{ metrics.metrics.confusion_matrix[1][1] }}]
+        ]
+      }
+    }
+    {% else %}
+    null
+    {% endif %}
+  </script>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
