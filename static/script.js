@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       try {
-        const res = await fetch("/predcit", {
+        const res = await fetch("/predict", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

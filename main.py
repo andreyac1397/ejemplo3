@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATASET_CLEAN = os.path.join(BASE_DIR, "dataset_clean.csv")
-DATASET_RAW = os.path.join(BASE_DIR, "")
+DATASET_RAW = os.path.join(BASE_DIR, "dataset.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "modelo.pkl")
 METRICS_PATH = os.path.join(BASE_DIR, "metrics.json")
 

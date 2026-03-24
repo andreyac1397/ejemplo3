@@ -5,6 +5,8 @@ OUTPUT_PATH = "dataset_clean.csv"
 
 def main():
     print("Cargando dataset...")
+
+    
     
     df = pd.read_csv(INPUT_PATH, sep=None, engine="python")
 

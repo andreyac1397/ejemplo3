@@ -1,0 +1,69 @@
+{
+  "dataset": {
+    "total": 596,
+    "good": 409,
+    "bad": 187,
+    "bad_rate": 0.3138
+  },
+  "features": [
+    "age",
+    "credit_amount",
+    "month_duration",
+    "payment_to_income_ratio",
+    "years_employment",
+    "status_account",
+    "credit_history",
+    "status_savings"
+  ],
+  "categorical_cols": [
+    "status_account",
+    "credit_history",
+    "status_savings",
+    "years_employment"
+  ],
+  "options": {
+    "status_account": [
+      "0 to < 200 DM",
+      "< 0 DM",
+      ">= 200 DM",
+      "no checking account"
+    ],
+    "credit_history": [
+      "all credits at this bank paid back duly",
+      "critical account/ other credits existing (not at this bank)",
+      "delay in paying off in the past",
+      "existing credits paid back duly till now",
+      "no credits taken/ all credits paid back duly"
+    ],
+    "status_savings": [
+      "100 to < 500 DM",
+      "500 to < 1000 DM",
+      "< 100 DM",
+      ">= 1000 DM",
+      "unknown/ no savings account"
+    ],
+    "years_employment": [
+      "1 to < 4 years",
+      "4 to < 7 years",
+      "< 1 year",
+      ">= 7 years",
+      "unemployed"
+    ]
+  },
+  "metrics": {
+    "accuracy": 0.7114,
+    "precision": 0.55,
+    "recall": 0.4681,
+    "f1": 0.5057,
+    "confusion_matrix": [
+      [
+        84,
+        18
+      ],
+      [
+        25,
+        22
+      ]
+    ]
+  }
+}
